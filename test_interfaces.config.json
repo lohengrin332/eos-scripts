@@ -1,0 +1,23 @@
+{
+    "connection_configs": [
+        {
+            "interface": "eth0",
+            "service_name": "Name of service 1"
+        },
+        {
+            "interface": "eth1",
+            "service_name": "Name of service 2"
+        }
+    ],
+    "debug": false,
+    "ips_to_ping": [
+        "8.8.8.8",
+        "1.1.1.1",
+        "4.2.2.2"
+    ],
+    "recipients": [
+        "<you@yourdomain.com>",
+        "<your-cell-number@your-providers-sms-email-address.com>"
+    ],
+    "sender": "EOS Service <you@yourdomain.com>"
+}
