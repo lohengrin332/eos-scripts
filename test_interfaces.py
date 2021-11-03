@@ -99,8 +99,8 @@ cnt_need_retry = len(connections_to_retry)
 if cnt_need_retry > 0:
     if config['debug']:
         print b'\n{cnt} connections failed first attempt\n'.format(cnt=cnt_need_retry)
-    else:
-        sleep(5)
+
+    sleep(5)
 
     connections_to_notify = check_connections(connections_to_retry)
 
