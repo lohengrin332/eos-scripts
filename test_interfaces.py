@@ -7,7 +7,7 @@ from time import sleep
 
 script_path = path.dirname(path.abspath(__file__))
 
-with open('{sp}/test_interfaces.json'.format(sp=script_path), 'r') as f:
+with open('{sp}/test_interfaces.config.json'.format(sp=script_path), 'r') as f:
     config = load(f)
 
 DEVNULL = open(devnull, 'w')
