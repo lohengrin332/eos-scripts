@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import argparse
 from datetime import datetime
 from json import load
 from os import devnull, path
@@ -65,13 +66,6 @@ class SigHandler:
     def exit_gracefully(self, *args):
         self.kill_now = True
         
-
-connections = []
-for connection_config in config['connection_configs']:
-    connections.append(Connection(
-        connection_config['interface'],
-        connection_config['service_name']
-    ))
 
 def notify_down(connections):
     command = ['/usr/sbin/ssmtp'] + config['recipients']
@@ -149,5 +143,20 @@ def check(connections):
 
         notify_down(connections_to_notify)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--monitor', action='store_true', help='Operate in monitoring mode. Default is check mode.')
+args = parser.parse_args()
 
-monitor(connections)
+connections = []
+for connection_config in config['connection_configs']:
+    connections.append(Connection(
+        connection_config['interface'],
+        connection_config['service_name']
+    ))
+
+if args.monitor:
+    print "\nOperating in monitor mode. <ctrl>+c to exit.\n"
+    monitor(connections)
+else:
+    print "\nOperating in check mode.\n"
+    check(connections)
