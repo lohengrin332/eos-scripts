@@ -30,6 +30,9 @@ class Connection:
                 self.ip = 'INVALID IFACE'
         return self.ip
 
+    def get_service_name(self):
+        return self.service_name
+
     def ping(self, ip, count=3):
         result = call([
             'sudo', 'ping', '-c', str(count), '-I', self.interface, ip,
@@ -73,7 +76,7 @@ def notify_down(connections):
     connection_format = '{name} is down!'
     body = []
     for connection in connections:
-        body.append(connection_format.format(name=connection.service_name))
+        body.append(connection_format.format(name=connection.get_service_name()))
 
     message = b'From: {sender}\nTo: {recipients}\nSubject: {subject}\n{body}\n'.format(
         sender=config['sender'],
@@ -100,7 +103,7 @@ def check_connections(connections):
             print 'Checking %s %15s %s' % (
                 connection.interface,
                 connection.get_ip(),
-                connection.service_name,
+                connection.get_service_name(),
             )
 
         if not connection.is_up():
@@ -115,14 +118,14 @@ def monitor(connections):
         #     sig_handler.exit_gracefully()
         failed_connections = check_connections(connections)
         for connection in failed_connections:
-            print b'\n{service_name} failed'.format(connection.service_name)
+            print b'\n{service_name} failed'.format(service_name=connection.get_service_name())
         else:
             print 'Stable'
 
     print ''
     for connection in connections:
         print b'{service_name:<10} had a {failure_rate:6.2f}% failure rate.'.format(
-            service_name=connection.service_name,
+            service_name=connection.get_service_name(),
             failure_rate=connection.get_failure_rate()
         )
 
