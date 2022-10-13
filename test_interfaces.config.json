@@ -19,5 +19,11 @@
         "<you@yourdomain.com>",
         "<your-cell-number@your-providers-sms-email-address.com>"
     ],
-    "sender": "EOS Service <you@yourdomain.com>"
+    "sender": "EOS Service <you@yourdomain.com>",
+    "rabbit_config": {
+        "user": "you",
+        "password": "your password",
+        "host": "<RMQ Host IP>",
+        "queue": "connections_monitor"
+    }
 }
