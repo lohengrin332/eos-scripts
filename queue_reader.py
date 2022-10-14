@@ -35,7 +35,7 @@ class RabbitConn:
     def __init__(self, rabbit_config):
         credentials = pika.PlainCredentials(rabbit_config['user'], rabbit_config['password'])
         parameters = pika.ConnectionParameters(host=rabbit_config['host'], credentials=credentials)
-        self.queue = 'test_q' # rabbit_config['queue']
+        self.queue = rabbit_config['queue']
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
         self.channel.queue_declare(queue=self.queue, durable=True, arguments={
