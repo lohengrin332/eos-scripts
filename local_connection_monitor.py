@@ -46,23 +46,21 @@ class RabbitConn:
         self.connection.close()
 
 
-def ping_all(ips_to_ping):
-    results = {
-        'interface': 'local',
-        'service_name': 'local',
-        'results': []
-    }
-
+def ping_all(ips_to_ping, rabbit):
+    global sig_handler
     for ip in (ips_to_ping):
-        results['results'].append({
+        result = {
             'interface': 'local',
             'service_name': 'local',
             'target': ip,
             'result': run(['ping', '-q', '-c', '1', ip], stdout=DEVNULL, stderr=STDOUT).returncode == 0
-        })
+        }
 
-    # print('%r' % results)
-    return results
+        rabbit.send(result)
+
+        sleep(2)
+        if sig_handler.kill_now:
+            break
 
 
 def monitor(config):
@@ -70,9 +68,7 @@ def monitor(config):
     rabbit = RabbitConn(config['rabbit_config'])
 
     while not sig_handler.kill_now:
-        ping_results = ping_all(config['ips_to_ping'])
-        rabbit.send(ping_results)
-        sleep(15)
+        ping_all(config['ips_to_ping'], rabbit)
 
     rabbit.disconnect()
 

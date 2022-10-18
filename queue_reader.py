@@ -60,12 +60,15 @@ class ResultsGrid:
     def __init__(self, config):
         self.max_length = 16
         self.row_length = 4
-        self.marker_frequency = 60
+        self.use_markers = False
+        self.marker_frequency = 4
         self.config = config
         self.queues = OrderedDict()
         self.interface_to_pos = {}
+        self.target_to_pos = {}
         self.clear_grid()
         self._init_interface_to_pos()
+        self._init_target_to_pos()
 
     def clear_grid(self):
         for connection in self.config['connection_configs']:
@@ -78,6 +81,12 @@ class ResultsGrid:
         count = 0
         for interface in self.queues:
             self.interface_to_pos[interface] = count
+            count += 1
+
+    def _init_target_to_pos(self):
+        count = 0
+        for target in self.config['ips_to_ping']:
+            self.target_to_pos[target] = count
             count += 1
 
     def _gen_empty_queue(self):
@@ -99,40 +108,50 @@ class ResultsGrid:
         return [0, 0, 0]
 
     def _gen_pixel(self, source, result):
-        is_marker = randint(0, self.marker_frequency) == 0
         is_edge = result['target'] == 'yahoo.com'
         is_successful = result['result']
+        is_marker = self.use_markers and randint(0, self.marker_frequency) == 0
 
         if not is_successful:
             pixel = [255, 0, 0]
         else:
-            if is_marker:
-                pixel = [127, 127, 127]
+            if is_edge:
+                color = randint(54, 70)
+                marker_color = 0 if (
+                    is_marker or not self.use_markers
+                ) else color
             else:
-                color = randint(58, 68) if is_edge else randint(119, 136)
+                color = randint(114, 140)
+                marker_color = 0 if is_marker else color
 
-                if source == 0:
-                    pixel = [color, 0, color]
-                elif source == 1:
-                    pixel = [color, color, 0]
-                else:
-                    pixel = [0, color, color]
+            if source == 0:
+                pixel = [color, marker_color, color]
+            elif source == 1:
+                pixel = [color, color, marker_color]
+            else:
+                pixel = [marker_color, color, color]
 
         return pixel
 
     def add_message(self, message):
         if message['interface'] not in self.queues:
-            print('Found invalid message type (%s)'.format(message['interface']))
+            print('Found invalid interface (%s)'.format(message['interface']))
         else:
             queue = self.queues[message['interface']]
-            results = []
-            for result in message['results']:
-                results.append({
-                    'pixel': self._gen_pixel(self.interface_to_pos[message['interface']], result),
-                    'result': result['result']
-                })
-            queue.insert(0, results)
-            self.trim_queue(queue)
+            target_position = self.target_to_pos[message['target']]
+            results = queue[0]
+
+            results[target_position] = {
+                'pixel': self._gen_pixel(self.interface_to_pos[message['interface']], message),
+                'result': message['result']
+            }
+
+            if target_position == len(results) - 1:
+                queue.insert(0, self._gen_empty_row())
+                self.trim_queue(queue)
+
+            set_uhhd(results_grid.for_display())
+
 
     def trim_queue(self, queue):
         self.queues['combined'].insert(0, queue.pop())
@@ -159,7 +178,6 @@ def msg_received(ch, method, properties, body):
     print(' [x] Received # %06d' % messages_processed)
     results = loads(body)
     results_grid.add_message(results)
-    set_uhhd(results_grid.for_display())
 
 def set_uhhd(grid):
     for x in range(len(grid)):

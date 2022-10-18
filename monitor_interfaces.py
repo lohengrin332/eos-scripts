@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-
+import threading
 from json import load, dumps
 from os import devnull, path
 import pika
 import signal
 from subprocess import call, check_output, STDOUT
+from time import sleep
 
 script_path = path.dirname(path.abspath(__file__))
 
@@ -41,17 +42,19 @@ class Connection:
 
         return result == 0
 
-    def ping_all(self):
+    def ping_all(self, rabbit):
+        global sig_handler
         self.ping_count += 1
-        results = []
         for ip in config['ips_to_ping']:
-            results.append({
+            result = {
                 'interface': self.get_interface(),
                 'service_name': self.get_service_name(),
                 'target': ip,
                 'result': self.ping(ip)
-            })
-        return results
+            }
+            rabbit.send(result)
+            if sig_handler.kill_now:
+                break
 
 
 class SigHandler:
@@ -95,28 +98,53 @@ class RabbitConn:
 def output(results):
     print dumps(results)
 
-def check(connections):
+def check(connections, rabbit):
     results = []
     for connection in connections:
         results.append({
             'service_name': connection.get_service_name(),
             'interface': connection.get_interface(),
-            'results': connection.ping_all()
+            'results': connection.ping_all(rabbit)
         })
     # output(results)
     return results
 
+class ThreadedPing(threading.Thread):
+    def __init__(self, connection, rabbit):
+        threading.Thread.__init__(self)
+        self.connection = connection
+        self.rabbit = rabbit
+
+    def run(self):
+        self.connection.ping_all(self.rabbit)
+
+def threaded_check(connections, rabbit):
+    global sig_handler
+    threads = []
+    for connection in connections:
+        threads.append(ThreadedPing(connection, rabbit))
+        if sig_handler.kill_now:
+            break
+
+    for thread in threads:
+        thread.start()
+        sleep(0.3)
+
+    for thread in threads:
+        thread.join()
+
 def monitor(connections, rabbit_config):
-    sig_handler = SigHandler()
+    global sig_handler
     rabbit = RabbitConn(rabbit_config)
 
     while not sig_handler.kill_now:
-        for result in (check(connections)):
-            rabbit.send(result)
+        # check(connections, rabbit)
+        threaded_check(connections, rabbit)
 
     rabbit.disconnect()
 
 
+sig_handler = SigHandler()
 connections = []
 for connection_config in config['connection_configs']:
     connections.append(Connection(
@@ -125,4 +153,3 @@ for connection_config in config['connection_configs']:
     ))
 
 monitor(connections, config['rabbit_config'])
-check(connections)

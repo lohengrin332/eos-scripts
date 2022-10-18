@@ -11,14 +11,20 @@
     ],
     "debug": false,
     "ips_to_ping": [
-        "8.8.8.8",
         "1.1.1.1",
-        "4.2.2.2"
+        "4.2.2.2",
+        "8.8.8.8",
+        "yahoo.com"
     ],
-    "recipients": [
-        "<you@yourdomain.com>",
-        "<your-cell-number@your-providers-sms-email-address.com>"
-    ],
+    "recipients": {
+        "alert": [
+            "<you@yourdomain.com>",
+            "<your-cell-number@your-providers-sms-email-address.com>"
+        ],
+        "stats": [
+            "<you@yourdomain.com>",
+        ]
+    },
     "sender": "EOS Service <you@yourdomain.com>",
     "rabbit_config": {
         "user": "you",
