@@ -1,4 +1,11 @@
 # eos-scripts
+## Prereqs
+These scripts require pika, which in turn requires Setuptools to install:
+1. Install Setuptools v44.0.0 from [PyPi](https://pypi.org/project/setuptools/44.1.1/#files).
+    * `sudo mkdir -p /usr/local/lib/python2.7/dist-packages ; python bootstrap.py ; sudo python setup.py install`
+1. Install Pika 1.1.0 from [PyPi](https://pypi.org/project/pika/1.1.0/#files).
+    * `sudo python setup.py install`
+
 ## get_ip.sh
 Find the IP address associated with the given interface. Usage:
     ```get_ip.sh eth?```
