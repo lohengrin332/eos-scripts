@@ -175,8 +175,8 @@ def msg_received(ch, method, properties, body):
     global messages_processed
     messages_processed += 1
     # print(' [x] Received # %06d: %r' % (messages_processed, body))
-    print(' [x] Received # %06d' % messages_processed)
     results = loads(body)
+    print(' [x] Received # %06d: %11s/%s' % (messages_processed, results['service_name'], results['target']))
     results_grid.add_message(results)
 
 def set_uhhd(grid):
