@@ -59,30 +59,81 @@ class Connection:
 
 class SigHandler:
     kill_now = False
+    init_rabbit_reconnect = False
+    reconnecting = False
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, *args):
+        print 'Exiting gracefully...'
         self.kill_now = True
+
+    def reconnect_rabbit(self, *args):
+        print('Requesting reconnect...')
+        if len(args) > 0 and not self.kill_now:
+            print('Underlying error:')
+            print(args[0])
+        if self.kill_now:
+            print('Exiting in progress, will not request reconnect')
+            self.init_rabbit_reconnect = False
+        else:
+            self.init_rabbit_reconnect = True
 
 
 class RabbitConn:
     consumer_tag = None
 
     def __init__(self, rabbit_config):
-        credentials = pika.PlainCredentials(rabbit_config['user'], rabbit_config['password'])
-        parameters = pika.ConnectionParameters(host=rabbit_config['host'], credentials=credentials)
         self.queue = rabbit_config['queue']
+        self.rabbit_config = rabbit_config
+        self.open_connection()
+
+    def reconnect_if_needed(self):
+        global sig_handler
+        if not sig_handler.kill_now:
+            if sig_handler.init_rabbit_reconnect:
+                if not sig_handler.reconnecting:
+                    sig_handler.reconnecting = True
+                    self.open_connection()
+                    sig_handler.init_rabbit_reconnect = False
+                    sig_handler.reconnecting = False
+                else:
+                    print("Reconnect in progress, skipping additional reconnect...")
+        else:
+            print("Reconnect requested, but exiting. Will not reconnect...")
+
+    def open_connection(self):
+        credentials = pika.PlainCredentials(self.rabbit_config['user'], self.rabbit_config['password'])
+        parameters = pika.ConnectionParameters(host=self.rabbit_config['host'], credentials=credentials)
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
         self.channel.queue_declare(queue=self.queue, durable=True, arguments={
-            'x-max-length': rabbit_config['max-queue-length']
+            'x-max-length': self.rabbit_config['max-queue-length']
         })
 
     def send(self, results):
-        self.channel.basic_publish(exchange='', routing_key=self.queue, body=dumps(results))
+        global sig_handler
+        if sig_handler.kill_now:
+            return
+        try:
+            self.channel.basic_publish(exchange='', routing_key=self.queue, body=dumps(results))
+        except (
+            pika.exceptions.ChannelWrongStateError,
+            pika.exceptions.StreamLostError,
+            pika.exceptions.ConnectionClosedByBroker,
+        ) as err:
+            sig_handler.reconnect_rabbit(err)
+        except AssertionError as ae:
+            if not sig_handler.kill_now:
+                sig_handler.exit_gracefully()
+            # print("AssertionError usually means a graceful_exit is in progress from another thread.\n%r" % ae)
+        except Exception as e:
+            if not sig_handler.kill_now:
+                print('Unexpected error, exiting...')
+                sig_handler.exit_gracefully()
+                raise e
 
     def receive(self, callback):
         self.consumer_tag = self.channel.basic_consume(queue=self.queue, auto_ack=True, on_message_callback=callback)
@@ -92,7 +143,10 @@ class RabbitConn:
         self.channel.basic_cancel(self.consumer_tag)
 
     def disconnect(self):
-        self.connection.close()
+        try:
+            self.connection.close()
+        except pika.exceptions.ConnectionWrongStateError as e:
+            pass
 
 
 def output(results):
@@ -120,6 +174,7 @@ class ThreadedPing(threading.Thread):
 
 def threaded_check(connections, rabbit):
     global sig_handler
+    # print('Threaded check')
     threads = []
     for connection in connections:
         threads.append(ThreadedPing(connection, rabbit))
@@ -140,6 +195,7 @@ def monitor(connections, rabbit_config):
     while not sig_handler.kill_now:
         # check(connections, rabbit)
         threaded_check(connections, rabbit)
+        rabbit.reconnect_if_needed()
 
     rabbit.disconnect()
 
