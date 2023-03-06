@@ -6,6 +6,7 @@ import os
 import pika
 from random import randint
 import signal
+import time
 import unicornhathd as uhhd
 
 # uhhd.brightness(1)
@@ -139,8 +140,13 @@ class ResultsGrid:
         else:
             queue = self.queues[message['interface']]
             target_position = self.target_to_pos[message['target']]
-            results = queue[0]
 
+            # if target_position == 0:
+            #     queue.insert(0, self._gen_empty_row())
+            #     self.trim_queue(queue)
+            #     set_uhhd(results_grid.for_display())
+
+            results = queue[0]
             results[target_position] = {
                 'pixel': self._gen_pixel(self.interface_to_pos[message['interface']], message),
                 'result': message['result']
@@ -151,7 +157,6 @@ class ResultsGrid:
                 self.trim_queue(queue)
 
             set_uhhd(results_grid.for_display())
-
 
     def trim_queue(self, queue):
         self.queues['combined'].insert(0, queue.pop())
