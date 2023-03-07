@@ -13,5 +13,13 @@ if [ -z "$IFACE" ] || [ -z "$COUNT" ] || [ -z "$TARGET" ]; then
 fi
 
 /bin/uname -a | /bin/grep UBNT &>/dev/null && \
-	/usr/bin/sudo /bin/ping -q -c $COUNT -I $IFACE $TARGET || \
-	/bin/ping -q -c $COUNT $TARGET
+	PING_COMMAND=/usr/bin/sudo /bin/ping -q -c $COUNT -I $IFACE $TARGET || \
+	PING_COMMAND=/bin/ping -q -c $COUNT $TARGET
+
+if [ "$1" == "--loop" ]; then
+	while true; do
+		`${PING_COMMAND}`
+	done
+else
+	`${PING_COMMAND}`
+fi
