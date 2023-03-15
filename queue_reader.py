@@ -136,9 +136,13 @@ class ResultsGrid:
 
     def add_message(self, message):
         if message['interface'] not in self.queues:
-            print('Found invalid interface (%s)'.format(message['interface']))
+            print('Found invalid interface (%s)' % (message['interface']))
         else:
             queue = self.queues[message['interface']]
+            if message['target'] not in self.target_to_pos:
+                print('Skipping unexpected target (%s) for interface (%s)'
+                      % (message['target'], message['interface']))
+                return
             target_position = self.target_to_pos[message['target']]
 
             # if target_position == 0:
