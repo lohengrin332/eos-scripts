@@ -12,9 +12,17 @@
     "debug": false,
     "ips_to_ping": [
         "1.1.1.1",
-        "4.2.2.2",
+        "208.67.222.222",
         "8.8.8.8",
+        "google.com"
+    ],
+    "hosts_to_ping": [
+        "microsoft.com",
+        "google.com",
         "yahoo.com"
+    ],
+    "old_ips_to_ping": [
+        "4.2.2.2"
     ],
     "recipients": {
         "alert": [
@@ -30,6 +38,7 @@
         "user": "you",
         "password": "your password",
         "host": "<RMQ Host IP>",
-        "queue": "connections_monitor"
+        "queue": "connections_monitor",
+        "max-queue-length": 250
     }
 }

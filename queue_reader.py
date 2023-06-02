@@ -85,10 +85,14 @@ class ResultsGrid:
             count += 1
 
     def _init_target_to_pos(self):
-        count = 0
+        count = -1
         for target in self.config['ips_to_ping']:
-            self.target_to_pos[target] = count
             count += 1
+            self.target_to_pos[target] = count
+
+        for target in self.config['hosts_to_ping']:
+            # Intentionally not incrementing count here so the hosts can be last, regardless of host is being pinged.
+            self.target_to_pos[target] = count
 
     def _gen_empty_queue(self):
         queue = []
@@ -109,7 +113,7 @@ class ResultsGrid:
         return [0, 0, 0]
 
     def _gen_pixel(self, source, result):
-        is_edge = result['target'] == 'yahoo.com'
+        is_edge = result['target'] in self.config['hosts_to_ping']
         is_successful = result['result']
         is_marker = self.use_markers and randint(0, self.marker_frequency) == 0
 
