@@ -64,6 +64,7 @@ def ping_all(ips_to_ping, rabbit):
 
 
 def monitor(config):
+    global sig_handler
     sig_handler = SigHandler()
     rabbit = RabbitConn(config['rabbit_config'])
 
