@@ -11,7 +11,7 @@ Some of these scripts require pika to be installed on your EdgeRouter, which in 
 Other scripts are designed to run on a Raspberry PI to monitor network health as a whole.
 This RPI should be equipped with:
 * A [Unicorn Hat](https://learn.pimoroni.com/article/getting-started-with-unicorn-hat) (setup libraries using `curl https://get.pimoroni.com/unicornhat | bash`).
-    * Once the above instructions have been followed, be sure to [enable SPI](turn on SP://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/) via `sudo raspi-config`.
+    * Once the above instructions have been followed, be sure to [enable SPI](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/) via `sudo raspi-config`.
 * Python v3 with `pika`
     * `sudo apt install python3-pika`
 * RabbitMQ:
