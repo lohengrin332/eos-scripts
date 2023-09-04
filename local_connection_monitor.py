@@ -81,4 +81,5 @@ with open('{sp}/test_interfaces.config.json'.format(sp=script_path), 'r') as f:
 
 DEVNULL = open(devnull, 'w')
 
+print("Starting monitor on configured interfaces.")
 monitor(config)

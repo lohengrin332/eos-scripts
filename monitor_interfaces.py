@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import threading
 from json import load, dumps
 from os import devnull, path
@@ -188,16 +189,32 @@ def threaded_check(connections, rabbit):
     for thread in threads:
         thread.join()
 
-def monitor(connections, rabbit_config):
+def monitor(connections, rabbit_config, with_reconnect=False):
     global sig_handler
     rabbit = RabbitConn(rabbit_config)
 
     while not sig_handler.kill_now:
         # check(connections, rabbit)
         threaded_check(connections, rabbit)
-        rabbit.reconnect_if_needed()
+        if with_reconnect:
+            rabbit.reconnect_if_needed()
 
     rabbit.disconnect()
+
+
+with_reconn = False
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--with-reconnect',
+        action='store_true',
+        help=('If set, will attempt to reconnect to rabbit and continue operation if connection is lost.'),
+        default=False
+    )
+
+    with_reconn = parser.parse_args().with_reconnect
 
 
 sig_handler = SigHandler()
@@ -208,4 +225,5 @@ for connection_config in config['connection_configs']:
         connection_config['service_name']
     ))
 
-monitor(connections, config['rabbit_config'])
+print("Starting monitor on configured interfaces.")
+monitor(connections, config['rabbit_config'], with_reconnect=with_reconn)
