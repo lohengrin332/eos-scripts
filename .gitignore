@@ -1,2 +1,6 @@
 *.sw?
 test_interfaces.config.json
+**/known_hosts
+**/eos_rsa
+**/eos_rsa.pub
+rabbit/**/*.py
