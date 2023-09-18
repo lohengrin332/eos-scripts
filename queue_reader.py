@@ -149,10 +149,10 @@ class ResultsGrid:
                 return
             target_position = self.target_to_pos[message['target']]
 
-            # if target_position == 0:
-            #     queue.insert(0, self._gen_empty_row())
-            #     self.trim_queue(queue)
-            #     set_uhhd(results_grid.for_display())
+            if target_position == 0:
+                queue.insert(0, self._gen_empty_row())
+                self.trim_queue(queue)
+                set_uhhd(results_grid.for_display())
 
             results = queue[0]
             results[target_position] = {
@@ -160,9 +160,9 @@ class ResultsGrid:
                 'result': message['result']
             }
 
-            if target_position == len(results) - 1:
-                queue.insert(0, self._gen_empty_row())
-                self.trim_queue(queue)
+            # if target_position == len(results) - 1:
+            #     queue.insert(0, self._gen_empty_row())
+            #     self.trim_queue(queue)
 
             set_uhhd(results_grid.for_display())
 
