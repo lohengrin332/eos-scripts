@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+from datetime import datetime
 import threading
 from json import load, dumps
 from os import devnull, path
@@ -68,11 +69,11 @@ class SigHandler:
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, *args):
-        print 'Exiting gracefully...'
+        print('{0} Exiting gracefully...'.format(datetime.now().isoformat()))
         self.kill_now = True
 
     def reconnect_rabbit(self, *args):
-        print('Requesting reconnect...')
+        print('{0} Requesting reconnect...'.format(datetime.now().isoformat()))
         if len(args) > 0 and not self.kill_now:
             print('Underlying error:')
             print(args[0])
@@ -101,9 +102,12 @@ class RabbitConn:
                     sig_handler.init_rabbit_reconnect = False
                     sig_handler.reconnecting = False
                 else:
-                    print("Reconnect in progress, skipping additional reconnect...")
+                    print(
+                        '{0} Reconnect in progress, skipping additional reconnect...'
+                        .format(datetime.now().isoformat())
+                    )
         else:
-            print("Reconnect requested, but exiting. Will not reconnect...")
+            print('{0} Reconnect requested, but exiting. Will not reconnect...'.format(datetime.now().isoformat()))
 
     def open_connection(self):
         credentials = pika.PlainCredentials(self.rabbit_config['user'], self.rabbit_config['password'])
@@ -132,7 +136,7 @@ class RabbitConn:
             # print("AssertionError usually means a graceful_exit is in progress from another thread.\n%r" % ae)
         except Exception as e:
             if not sig_handler.kill_now:
-                print('Unexpected error, exiting...')
+                print('{0} Unexpected error, exiting...'.format(datetime.now().isoformat()))
                 sig_handler.exit_gracefully()
                 raise e
 
@@ -151,7 +155,7 @@ class RabbitConn:
 
 
 def output(results):
-    print dumps(results)
+    print(dumps(results))
 
 def check(connections, rabbit):
     results = []
@@ -225,5 +229,5 @@ for connection_config in config['connection_configs']:
         connection_config['service_name']
     ))
 
-print("Starting monitor on configured interfaces.")
+print('{0} Starting monitor on configured interfaces.'.format(datetime.now().isoformat()))
 monitor(connections, config['rabbit_config'], with_reconnect=with_reconn)
