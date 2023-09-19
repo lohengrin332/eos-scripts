@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python -u
 
 from json import dumps, load
 from os import devnull, path

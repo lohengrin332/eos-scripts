@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python -u
 
 from collections import OrderedDict
 from json import dumps, load, loads
