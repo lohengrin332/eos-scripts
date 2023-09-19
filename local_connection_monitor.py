@@ -1,5 +1,6 @@
 #!/usr/local/bin/python -u
 
+from datetime import datetime
 from json import dumps, load
 from os import devnull, path
 import pika
@@ -81,5 +82,5 @@ with open('{sp}/test_interfaces.config.json'.format(sp=script_path), 'r') as f:
 
 DEVNULL = open(devnull, 'w')
 
-print("Starting monitor on configured interfaces.")
+print('{0} Starting monitor on configured interfaces.'.format(datetime.now().isoformat()))
 monitor(config)
