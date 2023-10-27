@@ -17,6 +17,8 @@ import unicornhathd as uhhd
 #
 # uhhd.off()
 
+use_animation = True
+
 script_path = os.path.dirname(os.path.abspath(__file__))
 
 with open('{sp}/test_interfaces.config.json'.format(sp=script_path), 'r') as f:
@@ -29,6 +31,86 @@ def graceful_exit(*args):
     print('Exiting gracefully...')
     running = False
     rabbit.stop_receiving()
+
+class Pixel:
+    cycle_count = 12
+    target_rgb = [0, 0, 0]
+    current_rgb = [0, 0, 0]
+    increment = [0, 0, 0]
+    animate = False
+
+    def __init__(
+        self,
+        is_edge=False,
+        is_successful=True,
+        source=0,
+        animate=False,
+    ):
+        if not is_successful:
+            self.target_rgb = [255, 0, 0]
+            self.animate = False
+        else:
+            self.animate = animate
+
+            if is_edge:
+                color = randint(54, 70)
+                marker_color = 0
+            else:
+                color = randint(114, 140)
+                marker_color = color
+
+            red = color
+            green = color
+            blue = color
+
+            if source == 0:
+                green = marker_color
+            elif source == 1:
+                blue = marker_color
+            else:
+                red = marker_color
+
+            self.target_rgb = [red, green, blue]
+
+            zeros = [0, 0, 0]
+            if self.animate:
+                self.current_rgb = zeros
+                self.increment = [
+                    round(red / self.cycle_count),
+                    round(green / self.cycle_count),
+                    round(blue / self.cycle_count),
+                ]
+            else:
+                self.current_rgb = self.target_rgb
+                self.increment = zeros
+
+    @staticmethod
+    def EMPTY_PIXEL():
+        return Pixel(is_successful=False)
+
+    def increment_animation(self):
+        # print(
+        #     'incrementing pixel'
+        #     f'r/g/b ({self.current_rgb[0]}/{self.current_rgb[1]}/{self.current_rgb[2]}), '
+        #     f't r/g/b ({self.target_rgb[0]}/{self.target_rgb[1]}/{self.target_rgb[2]})'
+        # )
+        for p in range(3):
+            self.current_rgb[p] += (
+                self.increment[p] if self.current_rgb[p] < self.target_rgb[p] else 0
+            )
+
+    def get_rgb(self):
+        if self.animate:
+            if sum(self.target_rgb) > sum(self.current_rgb):
+                self.increment_animation()
+            else:
+                self.animate = False
+
+        return self.current_rgb
+
+    def get_is_animating(self):
+        return self.animate
+
 
 class RabbitConn:
     consumer_tag = None
@@ -62,7 +144,6 @@ class ResultsGrid:
         self.max_length = 16
         self.row_length = 4
         self.use_markers = False
-        self.marker_frequency = 4
         self.config = config
         self.queues = OrderedDict()
         self.interface_to_pos = {}
@@ -104,39 +185,42 @@ class ResultsGrid:
         row = []
         for x in range(self.row_length):
             row.append({
-                'pixel': self._gen_empty_pixel(),
+                'pixel': Pixel.EMPTY_PIXEL(),
                 'result': False
             })
         return row
 
-    def _gen_empty_pixel(self):
-        return [0, 0, 0]
-
     def _gen_pixel(self, source, result):
         is_edge = result['target'] in self.config['hosts_to_ping']
         is_successful = result['result']
-        is_marker = self.use_markers and randint(0, self.marker_frequency) == 0
 
-        if not is_successful:
-            pixel = [255, 0, 0]
-        else:
-            if is_edge:
-                color = randint(54, 70)
-                marker_color = 0 if (
-                    is_marker or not self.use_markers
-                ) else color
-            else:
-                color = randint(114, 140)
-                marker_color = 0 if is_marker else color
+        return Pixel(
+            is_edge = is_edge,
+            is_successful = is_successful,
+            source = source,
+            animate = use_animation,
+        )
 
-            if source == 0:
-                pixel = [color, marker_color, color]
-            elif source == 1:
-                pixel = [color, color, marker_color]
-            else:
-                pixel = [marker_color, color, color]
+        # if not is_successful:
+        #     pixel = Pixel(255, 0, 0, False)
+        # else:
+        #     if is_edge:
+        #         color = randint(54, 70)
+        #         marker_color = 0 if (
+        #             is_marker or not self.use_markers
+        #         ) else color
+        #     else:
+        #         color = randint(114, 140)
+        #         marker_color = 0 if is_marker else color
 
-        return pixel
+        #     if source == 0:
+        #         pixel = Pixel(color, marker_color, color, use_animation)
+        #     elif source == 1:
+        #         pixel = Pixel(color, color, marker_color, use_animation)
+        #     else:
+        #         pixel = Pixel(marker_color, color, color, use_animation)
+
+        # return pixel
 
     def add_message(self, message):
         if message['interface'] not in self.queues:
@@ -193,12 +277,17 @@ def msg_received(ch, method, properties, body):
     results_grid.add_message(results)
 
 def set_uhhd(grid):
-    for x in range(len(grid)):
-        row = grid[x]
-        for y in range(len(row)):
-            # print(f'set_pixel({x}, {y}, [{row[y][0]}, {row[y][1]}, {row[y][2]}])')
-            uhhd.set_pixel(x, y, row[y][0], row[y][1], row[y][2])
-    uhhd.show()
+    animating = True
+    while animating:
+        animating = False
+        for x in range(len(grid)):
+            row = grid[x]
+            for y in range(len(row)):
+                # print(f'set_pixel({x}, {y}, [{row[y][0]}, {row[y][1]}, {row[y][2]}])')
+                rgb = row[y].get_rgb()
+                animating = animating or row[y].get_is_animating()
+                uhhd.set_pixel(x, y, rgb[0], rgb[1], rgb[2])
+        uhhd.show()
 
 
 signal.signal(signal.SIGINT, graceful_exit)
