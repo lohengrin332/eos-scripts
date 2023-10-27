@@ -6,6 +6,7 @@ import os
 import pika
 from random import randint
 import signal
+import threading
 import time
 import unicornhathd as uhhd
 
@@ -33,7 +34,7 @@ def graceful_exit(*args):
     rabbit.stop_receiving()
 
 class Pixel:
-    cycle_count = 12
+    cycle_count = 54
     target_rgb = [0, 0, 0]
     current_rgb = [0, 0, 0]
     increment = [0, 0, 0]
@@ -76,9 +77,9 @@ class Pixel:
             if self.animate:
                 self.current_rgb = zeros
                 self.increment = [
-                    round(red / self.cycle_count),
-                    round(green / self.cycle_count),
-                    round(blue / self.cycle_count),
+                    max(round(red / self.cycle_count), 1),
+                    max(round(green / self.cycle_count), 1),
+                    max(round(blue / self.cycle_count), 1),
                 ]
             else:
                 self.current_rgb = self.target_rgb
@@ -236,7 +237,6 @@ class ResultsGrid:
             if target_position == 0:
                 queue.insert(0, self._gen_empty_row())
                 self.trim_queue(queue)
-                set_uhhd(results_grid.for_display())
 
             results = queue[0]
             results[target_position] = {
@@ -247,8 +247,6 @@ class ResultsGrid:
             # if target_position == len(results) - 1:
             #     queue.insert(0, self._gen_empty_row())
             #     self.trim_queue(queue)
-
-            set_uhhd(results_grid.for_display())
 
     def trim_queue(self, queue):
         self.queues['combined'].insert(0, queue.pop())
@@ -266,28 +264,44 @@ class ResultsGrid:
         return _grid
 
 
+class ThreadedDraw(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        global results_grid
+        animating = True
+        while animating:
+            animating = set_uhhd(results_grid.for_display())
+
+
+def set_uhhd(grid):
+    animating = False
+    for x in range(len(grid)):
+        row = grid[x]
+        for y in range(len(row)):
+            # print(f'set_pixel({x}, {y}, [{row[y][0]}, {row[y][1]}, {row[y][2]}])')
+            rgb = row[y].get_rgb()
+            animating = animating or row[y].get_is_animating()
+            uhhd.set_pixel(x, y, rgb[0], rgb[1], rgb[2])
+    uhhd.show()
+    return animating
+
 messages_processed = 0
+uhhd_thread = None
+
 def msg_received(ch, method, properties, body):
     global results_grid
     global messages_processed
+    global uhhd_thread
     messages_processed += 1
     # print(' [x] Received # %06d: %r' % (messages_processed, body))
     results = loads(body)
     print(' [x] Received # %06d: %11s/%s' % (messages_processed, results['service_name'], results['target']))
     results_grid.add_message(results)
-
-def set_uhhd(grid):
-    animating = True
-    while animating:
-        animating = False
-        for x in range(len(grid)):
-            row = grid[x]
-            for y in range(len(row)):
-                # print(f'set_pixel({x}, {y}, [{row[y][0]}, {row[y][1]}, {row[y][2]}])')
-                rgb = row[y].get_rgb()
-                animating = animating or row[y].get_is_animating()
-                uhhd.set_pixel(x, y, rgb[0], rgb[1], rgb[2])
-        uhhd.show()
+    if uhhd_thread is None or not uhhd_thread.is_alive():
+        uhhd_thread = ThreadedDraw()
+        uhhd_thread.start()
 
 
 signal.signal(signal.SIGINT, graceful_exit)
