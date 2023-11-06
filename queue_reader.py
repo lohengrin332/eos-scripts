@@ -44,11 +44,15 @@ class Pixel:
         self,
         is_edge=False,
         is_successful=True,
+        is_blank=False,
         source=0,
         animate=False,
     ):
-        if not is_successful:
-            self.target_rgb = [255, 0, 0]
+        if is_blank:
+            self.current_rgb = self.target_rgb = [0, 0, 0]
+            self.animate = False
+        elif not is_successful:
+            self.current_rgb = self.target_rgb = [255, 0, 0]
             self.animate = False
         else:
             self.animate = animate
@@ -87,7 +91,7 @@ class Pixel:
 
     @staticmethod
     def EMPTY_PIXEL():
-        return Pixel(is_successful=False)
+        return Pixel(is_blank=True)
 
     def increment_animation(self):
         # print(
