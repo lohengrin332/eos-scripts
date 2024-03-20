@@ -1,6 +1,12 @@
 # eos-scripts
 ## Prereqs
 ### EdgeRouter
+These packages require Python 2.7.9 or greater.
+Make sure you have the [latest version](https://ui.com/download/software/er-4) of the EdgeRouter software.
+Installation instructions are on [help.ui.com](https://help.ui.com/hc/en-us/articles/205146110-EdgeRouter-How-to-Upgrade-the-EdgeOS-Firmware).
+
+You will also need `unzip` to extract setuptools. Install this by following [Add Debian Packages to EdgeOS v2.0.0 and Newer Versions](https://help.ui.com/hc/en-us/articles/205202560-EdgeRouter-Add-Debian-Packages-to-EdgeOS), then run `sudo apt-get install zip`.
+
 Some of these scripts require pika to be installed on your EdgeRouter, which in turn requires Setuptools to install:
 1. Install Setuptools v44.0.0 from [PyPi](https://pypi.org/project/setuptools/44.1.1/#files).
     * `sudo mkdir -p /usr/local/lib/python2.7/dist-packages ; python bootstrap.py ; sudo python setup.py install`

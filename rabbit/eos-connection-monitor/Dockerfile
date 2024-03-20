@@ -11,4 +11,4 @@ ADD known_hosts /root/.ssh/
 WORKDIR /ecm
 
 CMD /usr/bin/ssh -i ./eos_rsa ecm@eos.lan /config/scripts/custom/monitor_interfaces.py
-# CMD /bin/sh
+# CMD /bin/sleep 1000
