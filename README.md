@@ -29,6 +29,7 @@ This RPI should be equipped with:
     * `sudo rabbitmqctl set_user_tags <your login user> administrator`
     * `sudo rabbitmqctl set_permissions -p / <your login user> ".*" ".*" ".*"`
     * Rabbit Management console can be accessed via [http://<RPI ip>:15672/](http://192.168.1.68:15672/)
+
 Image from Ubuntu Linux using `rpi-imager`. Install using `sudo apt install rpi-imager`. Further details [here](https://www.raspberrypi.com/software/).
 
 ## get_ip.sh
