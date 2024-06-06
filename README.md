@@ -16,11 +16,15 @@ Some of these scripts require pika to be installed on your EdgeRouter, which in 
 ### Raspberry PI
 Other scripts are designed to run on a Raspberry PI to monitor network health as a whole.
 This RPI should be equipped with:
-* A [Unicorn Hat](https://learn.pimoroni.com/article/getting-started-with-unicorn-hat) (setup libraries using `curl https://get.pimoroni.com/unicornhat | bash`).
-    * Once the above instructions have been followed, be sure to [enable SPI](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/) via `sudo raspi-config`.
 * Python v3 with `pika`
     * `sudo apt install python3-pika`
-* RabbitMQ:
+* A [Unicorn Hat HD](https://www.adafruit.com/product/3580?gad_source=1&gclid=CjwKCAjwvIWzBhAlEiwAHHWgva0qu-tcuEOzuS0iWjzK16e_SlGAjeqax0l2xw5CjxHBViT1p57GnBoCa0sQAvD_BwE)
+* The unicornhathd libraries
+    * `sudo apt install python3-unicornhathd`).
+* [Enable SPI](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/)
+   * `sudo raspi-config`
+   * Add the user who will run the queue reader script to the `spi` group via `sudo vigr`
+* Access to a RabbitMQ server:
     * `sudo apt install rabbitmq-server`
     * `sudo rabbitmq-plugins enable rabbitmq_management`
     * `sudo rabbitmqctl add_user <service user from test_interfaces.config.json> <service user password>`
