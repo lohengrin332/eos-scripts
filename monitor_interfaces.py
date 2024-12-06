@@ -63,10 +63,12 @@ class SigHandler:
     kill_now = False
     init_rabbit_reconnect = False
     reconnecting = False
+    with_reconnect = False
 
-    def __init__(self):
+    def __init__(self, with_reconnect=False):
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
+        self.with_reconnect = with_reconnect
 
     def exit_gracefully(self, *args):
         print('{0} Exiting gracefully...'.format(datetime.now().isoformat()))
@@ -74,6 +76,9 @@ class SigHandler:
 
     def reconnect_rabbit(self, *args):
         print('{0} Requesting reconnect...'.format(datetime.now().isoformat()))
+        if not self.with_reconnect:
+            print('Reconnect disabled. Exiting.')
+            self.exit_gracefully(*args)
         if len(args) > 0 and not self.kill_now:
             print('Underlying error:')
             print(args[0])
@@ -98,7 +103,11 @@ class RabbitConn:
             if sig_handler.init_rabbit_reconnect:
                 if not sig_handler.reconnecting:
                     sig_handler.reconnecting = True
-                    self.open_connection()
+                    self.disconnect()
+                    try:
+                        self.open_connection()
+                    except Exception as e:
+                        print('{0} Reconnect exception: {1}'.format(datetime.now().isoformat(), e))
                     sig_handler.init_rabbit_reconnect = False
                     sig_handler.reconnecting = False
                 else:
@@ -221,7 +230,7 @@ if __name__ == "__main__":
     with_reconn = parser.parse_args().with_reconnect
 
 
-sig_handler = SigHandler()
+sig_handler = SigHandler(with_reconnect=with_reconn)
 connections = []
 for connection_config in config['connection_configs']:
     connections.append(Connection(
