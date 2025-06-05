@@ -37,9 +37,9 @@ class Connection:
     def get_service_name(self):
         return self.service_name
 
-    def ping(self, ip, count=3):
+    def ping(self, ip, count=3, timeout=1):
         result = call([
-            'sudo', 'ping', '-c', str(count), '-I', self.interface, ip,
+            'sudo', 'ping', '-W', str(timeout), '-c', str(count), '-I', self.interface, ip,
         ], stdout=DEVNULL, stderr=STDOUT)
 
         return result == 0
